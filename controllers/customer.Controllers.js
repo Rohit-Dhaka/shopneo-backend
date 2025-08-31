@@ -204,3 +204,42 @@ async function deleteCustomer(req, res) {
 }
 
 module.exports = { addCustomer, getCustomer, updateCustomer, deleteCustomer };
+
+
+
+
+
+
+// Admin 
+// http://localhost:4000/api/v1/admin/signup 
+// http://localhost:4000/api/v1/admin/login
+
+// blogs 
+// http://localhost:4000/api/v1/blogs/addblog
+// http://localhost:4000/api/v1/blogs/getblog 
+// http://localhost:4000/api/v1/blogs/updateblog/:id 
+// http://localhost:4000/api/v1/blogs/deleteblog/:id
+
+// BusinessHours 
+// http://localhost:4000/api/v1/time/addtime 
+// http://localhost:4000/api/v1/time/gettime 
+// http://localhost:4000/api/v1/time/updatetime/:id
+// http://localhost:4000/api/v1/time/deletetime/:id
+
+// Customer 
+// http://localhost:4000/api/v1/customer/addcustomer
+// http://localhost:4000/api/v1/customer/getcustomer 
+// http://localhost:4000/api/v1/customer/updatecustomer/:id 
+// http://localhost:4000/api/v1/customer/deletecustomer/:id
+
+// Products 
+// http://localhost:4000/api/v1/products/addproducts
+// http://localhost:4000/api/v1/products/getproducts
+// http://localhost:4000/api/v1/products/updateproducts/:id 
+// http://localhost:4000/api/v1/products/deleteproducts/:id
+
+// SEO
+// http://localhost:4000/api/v1/seo/addseco
+// http://localhost:4000/api/v1/seo/getseo
+// http://localhost:4000/api/v1/seo/updateseo/:id 
+// http://localhost:4000/api/v1/seo/deleteseo/:id

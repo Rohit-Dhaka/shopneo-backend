@@ -5,6 +5,7 @@ const fs = require("fs");
 async function addblog(req, res) {
   try {
     const { heading, description } = req.body;
+    console.log(req.file)
 
     if (!heading || !description) {
       return res.status(400).json({ message: "All fields are required" });
@@ -17,7 +18,10 @@ async function addblog(req, res) {
     const newBlog = await Blogs.create({
       heading,
       description,
-      img: result.secure_url,
+        img: {
+    url: result.secure_url,
+    public_id: result.public_id,
+  },
       adminId: req.admin._id,
     });
 
