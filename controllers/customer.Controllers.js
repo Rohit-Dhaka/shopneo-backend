@@ -107,11 +107,30 @@ async function getCustomer(req, res) {
     }
     return res
       .status(200)
-      .json({ message: "customer get successfully", customers });
+      .json({ message: "customers get successfully", customers });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+async function getOneCustomer(req, res) {
+  try {
+    const { id } = req.params;   
+
+    const customer = await Customer.findById(id);  
+
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Customer fetched successfully", customer });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
 
 
 
@@ -223,7 +242,7 @@ async function deleteCustomer(req, res) {
   }
 }
 
-module.exports = { addCustomer, getCustomer, updateCustomer, deleteCustomer };
+module.exports = { addCustomer,getOneCustomer, getCustomer, updateCustomer, deleteCustomer };
 
 
 
