@@ -2,101 +2,106 @@ const Blogs = require("../models/Blogs.js");
 const cloudinary = require("../config/cloudinary.js");
 const fs = require("fs");
 
-async function addblog(req, res) {
+// Add Blog
+async function addBlog(req, res) {
   try {
-    const { heading, description } = req.body;
-    console.log(req.file)
+    const { heading, description, customerId } = req.body;
 
-    if (!heading || !description) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!heading || !description || !customerId) {
+      return res.status(400).json({ message: "Heading, description, and customerId are required" });
     }
+
     if (!req.file) {
       return res.status(400).json({ message: "Image file is required" });
     }
-    const result = await cloudinary.uploader.upload(req.file.path);
-    fs.unlinkSync(req.file.path);
+
+    const img = await uploadImage(req.file, "blogs");
+
     const newBlog = await Blogs.create({
       heading,
       description,
-        img: {
-    url: result.secure_url,
-    public_id: result.public_id,
-  },
-      
-      customerId
-
+      customerId,
+      img,
     });
 
-    return res.status(201).json({
-      message: "Blog added successfully",
-      newBlog,
-    });
+    return res.status(201).json({ message: "Blog added successfully", newBlog });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Add Blog Error:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 }
-async function getblog(req, res) {
+
+// Get All Blogs
+async function getBlog(req, res) {
   try {
-    const blogs = await Blogs.find();
-    if (!blogs) {
-      return res.status(404).json({ message: "Blogs not founds" });
+    const blogs = await Blogs.find().populate("customerId", "name businessName");
+    if (!blogs || blogs.length === 0) {
+      return res.status(404).json({ message: "No blogs found" });
     }
-    return res.status(201).json({ message: "Blog get successfully", blogs });
+    return res.status(200).json({ message: "Blogs fetched successfully", blogs });
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Get Blog Error:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 }
 
+// Update Blog
 async function updateBlog(req, res) {
   try {
     const { heading, description } = req.body;
     const { id } = req.params;
 
-    let blog = await Blogs.findById(id);
+    const blog = await Blogs.findById(id);
     if (!blog) {
       return res.status(404).json({ message: "Blog not found" });
     }
 
+    // Update image if provided
     if (req.file) {
-      if (blog.img.public_id) {
+      if (blog.img?.public_id) {
         await cloudinary.uploader.destroy(blog.img.public_id);
       }
-      const result = await cloudinary.uploader.upload(req.file.path);
-
-      blog.img = {
-        url: result.secure_url,
-        public_id: result.public_id,
-      };
+      blog.img = await uploadImage(req.file, "blogs");
     }
 
     if (heading) blog.heading = heading;
     if (description) blog.description = description;
 
     await blog.save();
-
     return res.status(200).json({ message: "Blog updated successfully", blog });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Update Blog Error:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 }
 
-async function deleteblog(req, res) {
+// Delete Blog
+async function deleteBlog(req, res) {
   try {
     const { id } = req.params;
 
-    const deletedBlog = await Blogs.findByIdAndDelete(id);
-
-    if (!deletedBlog) {
-      return res.status(404).json({ error: "Blog not found" });
+    const blog = await Blogs.findByIdAndDelete(id);
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
     }
 
-    return res.status(200).json({ message: "Blog deleted successfully" });
+    // Delete image from Cloudinary
+    if (blog.img?.public_id) {
+      await cloudinary.uploader.destroy(blog.img.public_id);
+    }
+
+    return res.status(200).json({ message: "Blog deleted successfully", blog });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Delete Blog Error:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 }
 
-module.exports = { addblog, getblog, updateBlog, deleteblog };
+// Helper: upload image to Cloudinary
+async function uploadImage(file, folder) {
+  const result = await cloudinary.uploader.upload(file.path, { folder });
+  fs.unlinkSync(file.path);
+  return { url: result.secure_url, public_id: result.public_id };
+}
+
+module.exports = { addBlog, getBlog, updateBlog, deleteBlog };

@@ -10,11 +10,10 @@ const productSchema = new mongoose.Schema({
   whatsappUrl: String,
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Customer",
+    ref: "Customer", 
     required: true,
   },
 });
 
 const Products = mongoose.model("Products", productSchema);
-
 module.exports = Products;
