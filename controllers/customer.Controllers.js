@@ -2,6 +2,7 @@ const Customer = require("../models/Customer.js");
 const cloudinary = require("../config/cloudinary.js");
 const fs = require("fs");
 
+
 async function addCustomer(req, res) {
   try {
     const {
@@ -19,6 +20,7 @@ async function addCustomer(req, res) {
       numberalternative,
     } = req.body;
 
+    // ✅ Check slug uniqueness
     const existing = await Customer.findOne({ slug });
     if (existing) {
       return res
@@ -26,42 +28,45 @@ async function addCustomer(req, res) {
         .json({ message: "Slug already exists, use a different slug" });
     }
 
-    let bannerImageUrl = "";
-    let profileImageUrl = "";
-    let galleryImagesUrls = [];
+    let bannerImageData = {};
+    let profileImageData = {};
+    let galleryImagesData = [];
 
-    if (req.files && req.files.bannerImage) {
+    // ✅ Banner Image
+    if (req.files?.bannerImage) {
       const result = await cloudinary.uploader.upload(
         req.files.bannerImage[0].path,
-        {
-          folder: "customers/banner",
-        }
+        { folder: "customers/banner" }
       );
-      bannerImageUrl = result.secure_url;
+      bannerImageData = { url: result.secure_url, public_id: result.public_id };
       fs.unlinkSync(req.files.bannerImage[0].path);
     }
 
-    if (req.files && req.files.profileImage) {
+    // ✅ Profile Image
+    if (req.files?.profileImage) {
       const result = await cloudinary.uploader.upload(
         req.files.profileImage[0].path,
-        {
-          folder: "customers/profile",
-        }
+        { folder: "customers/profile" }
       );
-      profileImageUrl = result.secure_url;
+      profileImageData = { url: result.secure_url, public_id: result.public_id };
       fs.unlinkSync(req.files.profileImage[0].path);
     }
 
-    if (req.files && req.files.galleryImages) {
+    // ✅ Gallery Images
+    if (req.files?.galleryImages) {
       for (let file of req.files.galleryImages) {
         const result = await cloudinary.uploader.upload(file.path, {
           folder: "customers/gallery",
         });
-        galleryImagesUrls.push(result.secure_url);
+        galleryImagesData.push({
+          url: result.secure_url,
+          public_id: result.public_id,
+        });
         fs.unlinkSync(file.path);
       }
     }
 
+    // ✅ Create new customer
     const newCustomer = await Customer.create({
       slug,
       name,
@@ -76,19 +81,21 @@ async function addCustomer(req, res) {
       facebook,
       numberalternative,
       adminId: req.admin._id,
-      bannerImage: bannerImageUrl,
-      profileImage: profileImageUrl,
-      galleryImages: galleryImagesUrls,
+      bannerImage: bannerImageData,
+      profileImage: profileImageData,
+      galleryImages: galleryImagesData,
     });
 
-    res
-      .status(201)
-      .json({ message: " Customer added successfully", newCustomer });
+    res.status(201).json({
+      message: "Customer added successfully",
+      newCustomer,
+    });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: " Error adding customer", error: error.message });
+    console.error("Add Customer Error:", error);
+    res.status(500).json({
+      message: "Error adding customer",
+      error: error.message,
+    });
   }
 }
 
@@ -106,11 +113,13 @@ async function getCustomer(req, res) {
   }
 }
 
+
+
 async function updateCustomer(req, res) {
   try {
     const { id } = req.params;
-
     const customer = await Customer.findById(id);
+
     if (!customer) {
       return res.status(404).json({ message: "Customer not found" });
     }
@@ -127,10 +136,20 @@ async function updateCustomer(req, res) {
       whatsapp,
       instagram,
       facebook,
-      alternativeNumber,
+      numberalternative,
     } = req.body;
 
-    if (slug) customer.slug = slug;
+    // ✅ Check slug uniqueness if updated
+    if (slug && slug !== customer.slug) {
+      const existing = await Customer.findOne({ slug });
+      if (existing) {
+        return res
+          .status(400)
+          .json({ message: "Slug already exists, use a different slug" });
+      }
+      customer.slug = slug;
+    }
+
     if (name) customer.name = name;
     if (businessName) customer.businessName = businessName;
     if (location) customer.location = location;
@@ -141,53 +160,54 @@ async function updateCustomer(req, res) {
     if (whatsapp) customer.whatsapp = whatsapp;
     if (instagram) customer.instagram = instagram;
     if (facebook) customer.facebook = facebook;
-    if (alternativeNumber) customer.alternativeNumber = alternativeNumber;
+    if (numberalternative) customer.numberalternative = numberalternative;
 
-    if (req.files) {
-      if (req.files.bannerImage) {
-        const result = await cloudinary.uploader.upload(
-          req.files.bannerImage[0].path,
-          {
-            folder: "customers/banner",
-          }
-        );
-        customer.bannerImage = result.secure_url;
-        fs.unlinkSync(req.files.bannerImage[0].path);
-      }
+    // ✅ Handle Banner Image
+    if (req.files?.bannerImage) {
+      const result = await cloudinary.uploader.upload(
+        req.files.bannerImage[0].path,
+        { folder: "customers/banner" }
+      );
+      customer.bannerImage = { url: result.secure_url, public_id: result.public_id };
+      fs.unlinkSync(req.files.bannerImage[0].path);
+    }
 
-      if (req.files.profileImage) {
-        const result = await cloudinary.uploader.upload(
-          req.files.profileImage[0].path,
-          {
-            folder: "customers/profile",
-          }
-        );
-        customer.profileImage = result.secure_url;
-        fs.unlinkSync(req.files.profileImage[0].path);
-      }
+    // ✅ Handle Profile Image
+    if (req.files?.profileImage) {
+      const result = await cloudinary.uploader.upload(
+        req.files.profileImage[0].path,
+        { folder: "customers/profile" }
+      );
+      customer.profileImage = { url: result.secure_url, public_id: result.public_id };
+      fs.unlinkSync(req.files.profileImage[0].path);
+    }
 
-      if (req.files.galleryImages) {
-        let galleryUrls = [];
-        for (let file of req.files.galleryImages) {
-          const result = await cloudinary.uploader.upload(file.path, {
-            folder: "customers/gallery",
-          });
-          galleryUrls.push(result.secure_url);
-          fs.unlinkSync(file.path);
-        }
-        customer.galleryImages = [...customer.galleryImages, ...galleryUrls];
+    // ✅ Handle Gallery Images (append new ones)
+    if (req.files?.galleryImages) {
+      let galleryData = [];
+      for (let file of req.files.galleryImages) {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "customers/gallery",
+        });
+        galleryData.push({ url: result.secure_url, public_id: result.public_id });
+        fs.unlinkSync(file.path);
       }
+      customer.galleryImages = [...customer.galleryImages, ...galleryData];
     }
 
     await customer.save();
-    return res
-      .status(200)
-      .json({ message: "Customer updated successfully", customer });
+    res.status(200).json({
+      message: "Customer updated successfully",
+      customer,
+    });
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Update Customer Error:", error);
+    res.status(500).json({
+      message: "Error updating customer",
+      error: error.message,
+    });
   }
 }
-
 async function deleteCustomer(req, res) {
   try {
     const { id } = req.params;

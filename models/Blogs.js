@@ -7,9 +7,9 @@ const blogSchema = new mongoose.Schema({
   },
   heading: { type: String, required: true },
   description: String,
-  adminId: {
+  customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin",
+    ref: "Customer",
     required: true,
   },
 });

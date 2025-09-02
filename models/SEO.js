@@ -5,9 +5,9 @@ const seoSchema = new mongoose.Schema({
   metaDescription: String,
   metaKeywords: [String],
   canonicalUrl: String,
-  adminId: {
+  customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin",
+    ref: "Customer",
     required: true,
   },
 });

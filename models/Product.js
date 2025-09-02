@@ -8,9 +8,9 @@ const productSchema = new mongoose.Schema({
     public_id: String,
   },
   whatsappUrl: String,
-  adminId: {
+  customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin",
+    ref: "Customer",
     required: true,
   },
 });

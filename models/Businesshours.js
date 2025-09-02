@@ -8,9 +8,9 @@ const businessHoursSchema = new mongoose.Schema({
   friday: String,
   saturday: String,
   sunday: String,
-  adminId: {
+  customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin",
+    ref: "Customer",
     required: true,
   },
 });

@@ -22,7 +22,9 @@ async function addblog(req, res) {
     url: result.secure_url,
     public_id: result.public_id,
   },
-      adminId: req.admin._id,
+      
+      customerId
+
     });
 
     return res.status(201).json({

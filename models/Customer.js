@@ -5,8 +5,23 @@ const customerSchema = new mongoose.Schema(
     slug: { type: String, required: true },
     name: { type: String, required: true },
     businessName: String,
-    bannerImage: String,
-    profileImage: String,
+
+    // ✅ Updated image fields
+    bannerImage: {
+      url: String,
+      public_id: String,
+    },
+    profileImage: {
+      url: String,
+      public_id: String,
+    },
+    galleryImages: [
+      {
+        url: String,
+        public_id: String,
+      },
+    ],
+
     location: String,
     email: String,
     contact: String,
@@ -16,7 +31,7 @@ const customerSchema = new mongoose.Schema(
     facebook: String,
     youtube: String,
     description: String,
-    galleryImages: [String],
+
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
