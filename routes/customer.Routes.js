@@ -5,6 +5,7 @@ const {
   getCustomer,
   updateCustomer,
   deleteCustomer,
+  getOneCustomer,
 } = require("../controllers/customer.Controllers.js");
 const authmiddleware = require("../middleware/auth.middleware.js");
 const multer = require("multer");
@@ -24,6 +25,7 @@ customerRoutes.put(
   cpUpload,
   updateCustomer
 );
+customerRoutes.get("/getcustomer/:id", authmiddleware, getOneCustomer);
 customerRoutes.delete("/deletecustomer/:id", authmiddleware, deleteCustomer);
 
 module.exports = customerRoutes;
