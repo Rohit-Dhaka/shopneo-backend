@@ -6,15 +6,16 @@ const fs = require("fs");
 // ======================= CREATE PRODUCT =======================
 const createProduct = async (req, res) => {
   try {
-    const { name, description, whatsappUrl, customerId } = req.body;
+    const { customerId } = req.params;   // <-- yahan se lena hai
+    const { name, description, whatsappUrl } = req.body;
 
-    // ✅ Validate customer
+    // Validate customer
     const customer = await Customer.findById(customerId);
     if (!customer) {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    // ✅ Upload product image
+    // Upload product image if exists
     let imageData = {};
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
@@ -24,19 +25,18 @@ const createProduct = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
-    // ✅ Create new product
+    // Create product
     const product = new Products({
       name,
       description,
       whatsappUrl,
       image: imageData,
       customerId, // link product to customer
-      adminId: req.admin._id,
     });
 
     const savedProduct = await product.save();
 
-    // ✅ Push product inside customer
+    // Link product to customer
     customer.products.push(savedProduct._id);
     await customer.save();
 
@@ -46,38 +46,40 @@ const createProduct = async (req, res) => {
     });
   } catch (error) {
     console.error("Create Product Error:", error);
-    res.status(500).json({
-      message: "Error creating product",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Error creating product", error: error.message });
   }
 };
 
-// ======================= GET ALL PRODUCTS =======================
-const getAllProducts = async (req, res) => {
+
+// ======================= GET ALL PRODUCTS BY CUSTOMER =======================
+const getAllProductsByCustomer = async (req, res) => {
   try {
-    const products = await Products.find().populate("customerId", "name businessName");
-    res.status(200).json({ data: products });
+    const customerId = req.params.customerId;
+
+    const products = await Products.find({ customerId }).populate(
+      "customerId",
+      "name businessName"
+    );
+
+    res.status(200).json({ products });
   } catch (error) {
-    res.status(500).json({
-      message: "Error fetching products",
-      error: error.message,
-    });
+    console.error("Get Products Error:", error);
+    res.status(500).json({ message: "Error fetching products", error: error.message });
   }
 };
 
 // ======================= UPDATE PRODUCT =======================
 const updateProduct = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, description, whatsappUrl, customerId } = req.body;
+    const { id, customerId } = req.params;
+    const { name, description, whatsappUrl } = req.body;
 
     let product = await Products.findById(id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // ✅ If customer is changed
+    // If customer changed, update customer-product relationship
     if (customerId && customerId !== String(product.customerId)) {
       const oldCustomer = await Customer.findById(product.customerId);
       if (oldCustomer) {
@@ -95,7 +97,7 @@ const updateProduct = async (req, res) => {
       product.customerId = customerId;
     }
 
-    // ✅ Update image if provided
+    // Update image if provided
     if (req.file) {
       if (product.image?.public_id) {
         await cloudinary.uploader.destroy(product.image.public_id);
@@ -107,22 +109,17 @@ const updateProduct = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
+    // Update other fields
     if (name) product.name = name;
     if (description) product.description = description;
     if (whatsappUrl) product.whatsappUrl = whatsappUrl;
 
     await product.save();
 
-    return res.status(200).json({
-      message: "Product updated successfully",
-      product,
-    });
+    res.status(200).json({ message: "Product updated successfully", product });
   } catch (error) {
     console.error("Update Product Error:", error);
-    res.status(500).json({
-      message: "Error updating product",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Error updating product", error: error.message });
   }
 };
 
@@ -136,12 +133,12 @@ const deleteProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // ✅ Remove image from Cloudinary
+    // Delete image from Cloudinary
     if (product.image?.public_id) {
       await cloudinary.uploader.destroy(product.image.public_id);
     }
 
-    // ✅ Remove product from customer
+    // Remove product from customer
     const customer = await Customer.findById(product.customerId);
     if (customer) {
       customer.products.pull(product._id);
@@ -153,16 +150,13 @@ const deleteProduct = async (req, res) => {
     res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
     console.error("Delete Product Error:", error);
-    res.status(500).json({
-      message: "Error deleting product",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Error deleting product", error: error.message });
   }
 };
 
 module.exports = {
   createProduct,
-  getAllProducts,
+  getAllProductsByCustomer,
   updateProduct,
   deleteProduct,
 };
