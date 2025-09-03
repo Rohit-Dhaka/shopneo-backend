@@ -1,23 +1,47 @@
 const express = require("express");
 const blogsRoutes = express.Router();
+const authMiddleware = require("../middleware/auth.middleware");
 const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 
 const {
-  addBlog,
-  getBlog,
+  createBlog,
+  getAllBlogsByCustomer,
   updateBlog,
   deleteBlog,
 } = require("../controllers/blogs.controllers.js");
 
-const authMiddleware = require("../middleware/auth.middleware.js");
+// ======================= ROUTES =======================
 
-// Multer setup for single image upload
-const upload = multer({ dest: "uploads/" });
+// Create Blog for a specific Customer
+blogsRoutes.post(
+  "/addblog/:customerId",        // <-- customerId params me
+  authMiddleware,
+  upload.single("image"),
+  createBlog
+);
 
-// Routes
-blogsRoutes.post("/addblog", authMiddleware, upload.single("image"), addBlog);
-blogsRoutes.get("/getblog", getBlog);
-blogsRoutes.put("/updateblog/:id", authMiddleware, upload.single("image"), updateBlog);
-blogsRoutes.delete("/deleteblog/:id", authMiddleware, deleteBlog);
+// Get all Blogs for a specific Customer
+blogsRoutes.get(
+  "/allblogs/:customerId",       // <-- specific customer ke liye
+  authMiddleware,
+  getAllBlogsByCustomer
+);
+
+// Update Blog (optional: customerId change bhi ho sakta hai)
+blogsRoutes.put(
+  "/updateblog/:id",
+  authMiddleware,
+  upload.single("image"),
+  updateBlog
+);
+
+
+// Delete Blog
+blogsRoutes.delete(
+  "/deleteblog/:id",
+  authMiddleware,
+  deleteBlog
+);
 
 module.exports = blogsRoutes;
